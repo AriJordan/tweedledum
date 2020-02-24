@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../gates/gate_lib.hpp"
+#include "../networks/io_id.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -284,6 +285,8 @@ template<typename Network, typename Builder>
 auto to_unicode_str(Network const& network, Builder builder)
 {
 	network.foreach_gate([&](auto const& node) {
+		std::vector<io_id> controls;
+		std::vector<io_id> targets;
 		auto const& gate = node.gate;
 		switch (gate.operation()) {
 		default:
@@ -306,55 +309,101 @@ auto to_unicode_str(Network const& network, Builder builder)
 			gate.foreach_target([&](auto qid) { builder.add_gate("z", qid); });
 			break;
 
-		case gate_lib::swap: {
-			std::vector<io_id> qids;
-			gate.foreach_target([&](auto qid) {
-				qids.push_back(qid);
-			});
-			builder.add_swap(qids.at(0), qids.at(1));
-			
-		} break;
-
 		case gate_lib::cx:
-			gate.foreach_control([&](auto qid_control) {
-				gate.foreach_target([&](auto qid_target) {
-					builder.add_gate("X", qid_control, qid_target);
+			gate.foreach_control([&](io_id control) {
+				gate.foreach_target([&](io_id target) {
+					builder.add_gate("X", control, target);
 				});
 			});
 			break;
-
-		case gate_lib::mcx: {
-			std::vector<io_id> controls;
-			std::vector<io_id> targets;
-			gate.foreach_control([&](auto control) { controls.push_back(control); });
-			gate.foreach_target([&](auto target) { targets.push_back(target); });
-			builder.add_gate("X", controls, targets);
-		} break;
-
+		case gate_lib::cy:
+			gate.foreach_control([&](io_id control) {
+				gate.foreach_target([&](io_id target) {
+					builder.add_gate("Y", control, target);
+				});
+			});
+			break;
 		case gate_lib::cz:
-			gate.foreach_control([&](auto qid_control) {
-				gate.foreach_target([&](auto qid_target) {
-					builder.add_gate("Z", qid_control, qid_target);
+			gate.foreach_control([&](io_id control) {
+				gate.foreach_target([&](io_id target) {
+					builder.add_gate("Z", control, target);
 				});
 			});
 			break;
 
-		case gate_lib::mcz: {
-			std::vector<io_id> controls;
-			std::vector<io_id> targets;
-			gate.foreach_control([&](auto control) { controls.push_back(control); });
-			gate.foreach_target([&](auto target) { targets.push_back(target); });
-			builder.add_gate("Z", controls, targets);
-		} break;
-
-		case gate_lib::measurement: {
-			std::vector<io_id> qids;
-			gate.foreach_target([&](auto qid) {
-				qids.push_back(qid);
+		case gate_lib::crx:
+			gate.foreach_control([&](io_id control) {
+				gate.foreach_target([&](io_id target) {
+					builder.add_gate("x", control, target);
+				});
 			});
-			builder.add_measurement(qids.at(0), qids.at(1));
-			
-		} break;
+			break;
+
+		case gate_lib::cry:
+			gate.foreach_control([&](io_id control) {
+				gate.foreach_target([&](io_id target) {
+					builder.add_gate("y", control, target);
+				});
+			});
+			break;
+
+		case gate_lib::crz:
+			gate.foreach_control([&](io_id control) {
+				gate.foreach_target([&](io_id target) {
+					builder.add_gate("z", control, target);
+				});
+			});
+			break;
+
+		case gate_lib::swap:
+			gate.foreach_target([&](io_id qubit) {
+				targets.push_back(qubit);
+			});
+			builder.add_swap(targets.at(0), targets.at(1));
+			break;
+
+		case gate_lib::measurement:
+			gate.foreach_target([&](io_id io) {
+				targets.push_back(io);
+			});
+			builder.add_measurement(targets.at(0), targets.at(1));
+			break;
+
+		case gate_lib::mcx: 
+			gate.foreach_control([&](io_id control) { controls.push_back(control); });
+			gate.foreach_target([&](io_id target) { targets.push_back(target); });
+			builder.add_gate("X", controls, targets);
+			break;
+
+		case gate_lib::mcy: 
+			gate.foreach_control([&](io_id control) { controls.push_back(control); });
+			gate.foreach_target([&](io_id target) { targets.push_back(target); });
+			builder.add_gate("Y", controls, targets);
+			break;
+
+		case gate_lib::mcz: 
+			gate.foreach_control([&](io_id control) { controls.push_back(control); });
+			gate.foreach_target([&](io_id target) { targets.push_back(target); });
+			builder.add_gate("Z", controls, targets);
+			break;
+
+		case gate_lib::mcrx: 
+			gate.foreach_control([&](io_id control) { controls.push_back(control); });
+			gate.foreach_target([&](io_id target) { targets.push_back(target); });
+			builder.add_gate("x", controls, targets);
+			break;
+
+		case gate_lib::mcry: 
+			gate.foreach_control([&](io_id control) { controls.push_back(control); });
+			gate.foreach_target([&](io_id target) { targets.push_back(target); });
+			builder.add_gate("y", controls, targets);
+			break;
+
+		case gate_lib::mcrz: 
+			gate.foreach_control([&](io_id control) { controls.push_back(control); });
+			gate.foreach_target([&](io_id target) { targets.push_back(target); });
+			builder.add_gate("z", controls, targets);
+			break;
 		
 		}
 		return true;
